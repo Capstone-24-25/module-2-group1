@@ -1,0 +1,24 @@
+library(tokenizers)
+library(tidyverse)
+
+
+bigrams <- claims_raw %>%
+  pull(text_clean) %>%
+  tokenize_ngrams(n = 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
