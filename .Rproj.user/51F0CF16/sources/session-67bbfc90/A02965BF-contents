@@ -67,11 +67,21 @@ bigram_matrix_sparse <- as.matrix(bigram_dtm, 'CsparseMatrix')
 bigram_pca <- irlba(bigram_matrix_sparse, nv = 5) # 5 components cuz it wont run with all
 bigram_pca_data <- as.data.frame(bigram_pca$u)
 
-# combo log odds from 1st model w 2nd model PC
-combined_data <- cbind(bigram_pca_data, as.vector(log_odds))
 
-combined_data <- cbind(bigram_pca_data[order(bigram_pca_data$.id), ], 
-                       log_odds[order(log_odds$.id), ]) ## where i stopped
+# combo log odds from 1st model w 2nd model PC
+log_odds_df <- data.frame(log_odds = log_odds) %>%
+  mutate(.id = as.character(row_number()))
+bigram_pca_data <- bigram_pca_data %>% mutate(.id = as.character(row_number()))
+
+
+
+
+combined_data <- inner_join(bigram_pca_data, log_odds_df, by = ".id")
+
+combined_data <- combined_data %>%
+  full_join(response, by = '.id')
+
+
 
 # fit 2nd log reg
 bigram_log_reg <- glm(bclass ~ ., data = combined_data, family = binomial)

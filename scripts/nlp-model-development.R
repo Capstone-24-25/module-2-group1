@@ -77,6 +77,11 @@ history <- model %>%
       epochs = 5)
 
 ## CHECK TEST SET ACCURACY HERE
+load('results/example-preds.RData')
+
+true_labels <- claims_test %>%
+  pull(bclass)
+
 
 # save the entire model as a SavedModel
 save_model_tf(model, "results/example-model")
