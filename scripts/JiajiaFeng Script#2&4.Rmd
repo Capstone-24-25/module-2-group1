@@ -9,5 +9,28 @@ ls()
 # Assuming your data is stored in a variable named 'claims_raw'
 head(claims_raw)
 ```
+```{r}
+library(rvest)
+```
+
+```{r}
+# Function to extract headers and paragraphs from HTML content
+extract_content <- function(html_content) {
+  # Read the HTML content
+  page <- read_html(html_content)
+  
+  # Extract headers (e.g., h1, h2, h3) and paragraphs
+  headers <- page %>% html_nodes("h1, h2, h3") %>% html_text()
+  paragraphs <- page %>% html_nodes("p") %>% html_text()
+  
+  # Combine headers and paragraphs into a single string
+  combined_content <- c(headers, paragraphs)
+  return(paste(combined_content, collapse = " "))
+}
+
+# Apply the function to the 'text_tmp' column
+claims_raw$content_combined <- sapply(claims_raw$text_tmp, extract_content)
+
+```
 
  
