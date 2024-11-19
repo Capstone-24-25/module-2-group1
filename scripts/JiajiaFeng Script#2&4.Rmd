@@ -2,6 +2,8 @@
 
 ```{r}
 load('data2/claims-raw.RData')
+write.csv(claims_raw, "claims_raw.csv", row.names = FALSE)
+raw_csv <- read.csv("claims_raw.csv")
 ```
 
 ```{r}
@@ -9,23 +11,34 @@ ls()
 # Assuming your data is stored in a variable named 'claims_raw'
 head(claims_raw)
 ```
+
 ```{r}
 library(rvest)
 ```
 
+## Preliminary Task1
+
+### Scrape both header and paragraph content
 ```{r}
-# Function to extract headers and paragraphs from HTML content
+library(rvest)
+
+# use tryCatch: prevent the entire script from failing due to an issue with a single piece of HTML content
 extract_content <- function(html_content) {
-  # Read the HTML content
-  page <- read_html(html_content)
-  
-  # Extract headers (e.g., h1, h2, h3) and paragraphs
-  headers <- page %>% html_nodes("h1, h2, h3") %>% html_text()
-  paragraphs <- page %>% html_nodes("p") %>% html_text()
-  
-  # Combine headers and paragraphs into a single string
-  combined_content <- c(headers, paragraphs)
-  return(paste(combined_content, collapse = " "))
+  tryCatch({
+    # Read the HTML content
+    page <- read_html(html_content)
+    
+    # Extract headers and paragraphs
+    headers <- page %>% html_nodes("h1, h2, h3") %>% html_text()
+    paragraphs <- page %>% html_nodes("p") %>% html_text()
+    
+    # Combine headers and paragraphs
+    combined_content <- c(headers, paragraphs)
+    return(paste(combined_content, collapse = " "))
+  }, error = function(e) {
+    # Return NA or an empty string if an error occurs
+    return(NA)
+  })
 }
 
 # Apply the function to the 'text_tmp' column
@@ -33,4 +46,8 @@ claims_raw$content_combined <- sapply(claims_raw$text_tmp, extract_content)
 
 ```
 
- 
+### Clean the text data
+```{r}
+
+```
+
