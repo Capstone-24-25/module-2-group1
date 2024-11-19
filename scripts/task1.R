@@ -9,11 +9,11 @@ library(tokenizers)
 library(sparsesvd)
 library(glmnet)
 
-source("../scripts/modified-preprocessing.R")
-source("../scripts/projection.R")
+source("scripts/modified-preprocessing.R")
+source("scripts/projection.R")
 
 # load raw data
-load('../data/claims-raw.RData')
+load('data/claims-raw.RData')
 
 # clean raw data
 claims_clean <- claims_raw %>%
@@ -35,7 +35,7 @@ test_dtm <- testing(partitions) %>%
 test_labels <- testing(partitions) %>%
   select(.id, bclass, mclass)
 test_id <- test_labels %>% pull(.id)
-save(test_id, file = "../data/test-id.RData")
+save(test_id, file = "data/test-id.RData")
 
 # same, training set
 train_dtm <- training(partitions) %>%
@@ -44,7 +44,7 @@ train_dtm <- training(partitions) %>%
 train_labels <- training(partitions) %>%
   select(.id, bclass, mclass)
 train_id <- train_labels %>% pull(.id)
-save(train_id, file = "../data/train-id.RData")
+save(train_id, file = "data/train-id.RData")
 
 # PCA/projection
 proj_out <- projection_fn(train_dtm, 0.7)
@@ -81,7 +81,7 @@ train_log_odds <- predict(fit_reg,
                     newx = x_train,
                     type = "link")
 
-save(train_log_odds, file = "../data/train-log-odds.RData")
+save(train_log_odds, file = "data/train-log-odds.RData")
 
 # project test data onto PCs
 test_dtm_projected <- reproject_fn(.dtm = test_dtm, proj_out)
@@ -101,7 +101,7 @@ test_log_odds <- predict(fit_reg,
                          newx = x_test,
                          type = "link")
 
-save(test_log_odds, file = "../data/test-log-odds.RData")
+save(test_log_odds, file = "data/test-log-odds.RData")
 
 # store predictions in a data frame with true labels
 pred_df <- test_labels %>%

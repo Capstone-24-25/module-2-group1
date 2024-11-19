@@ -44,7 +44,7 @@ train_labels <- training(partitions) %>%
 preprocess_layer <- layer_text_vectorization(
   standardize = NULL,
   split = 'whitespace',
-  ngrams = NULL,
+  ngrams = 3,
   max_tokens = NULL,
   output_mode = 'tf_idf'
 )
@@ -55,11 +55,25 @@ preprocess_layer %>% adapt(train_text)
 model <- keras_model_sequential() %>%
   preprocess_layer() %>%
   layer_dropout(0.2) %>%
-  layer_dense(units = 25) %>%
+  layer_dense(25) %>%
+  layer_dropout(0.2) %>%
+  layer_dense(5) %>%
   layer_dropout(0.2) %>%
   layer_dense(1) %>%
   layer_activation(activation = 'sigmoid')
 
+model <- keras_model_sequential() %>%
+  preprocess_layer() %>%
+  layer_embedding(
+    input_dim = 1,
+    output_dim = 10
+  ) %>%
+  layer_lstm(10) %>%
+  layer_dense(
+    units = 1, 
+    activation = "sigmoid"
+  )
+  
 summary(model)
 
 # configure for training
@@ -73,8 +87,8 @@ model %>% compile(
 history <- model %>%
   fit(train_text, 
       train_labels,
-      validation_split = 0.3,
-      epochs = 5)
+      validation_split = 0.25,
+      epochs = 20)
 
 ## CHECK TEST SET ACCURACY HERE
 test_text <- testing(partitions) %>%

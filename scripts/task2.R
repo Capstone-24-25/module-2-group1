@@ -9,11 +9,11 @@ library(sparsesvd)
 library(glmnet)
 library(Matrix)
 
-source("../scripts/modified-preprocessing.R")
-source("../scripts/projection.R")
+source("scripts/modified-preprocessing.R")
+source("scripts/projection.R")
 
 # load raw data
-load('../data/claims-raw.RData')
+load('data/claims-raw.RData')
 
 # clean raw data
 claims_clean <- claims_raw %>%
@@ -23,15 +23,15 @@ claims_clean <- claims_raw %>%
 claims_bigrams <- claims_clean %>% 
   nlp_bg_fn()
 
-save(claims_bigrams, file = '../data/claims-bigrams.RData')
+save(claims_bigrams, file = 'data/claims-bigrams.RData')
 rm(claims_bigrams)
 
 # load id labels for training and test sets
-load("../data/train-id.RData")
-load("../data/test-id.RData")
+load("data/train-id.RData")
+load("data/test-id.RData")
 
 # partition claims bigrams based on task1 partition
-load("../data/claims-bigrams.RData")
+load("data/claims-bigrams.RData")
 training_bigrams <- claims_bigrams %>%
   filter(
     .id %in% train_id
@@ -40,41 +40,41 @@ testing_bigrams <- claims_bigrams %>%
   filter(
     .id %in% test_id
   )
-save(training_bigrams, file = '../data/training-bigrams.RData')
-save(testing_bigrams, file = '../data/testing-bigrams.RData')
+save(training_bigrams, file = 'data/training-bigrams.RData')
+save(testing_bigrams, file = 'data/testing-bigrams.RData')
 rm(training_bigrams)
 rm(testing_bigrams)
 
 # separate DTM from labels
-load('../data/testing-bigrams.RData')
+load('data/testing-bigrams.RData')
 test_bg_dtm <- testing_bigrams %>%
   select(-.id, -bclass, -mclass) %>%
   as.matrix()
 test_labels <- testing_bigrams %>%
   select(.id, bclass, mclass)
-save(test_bg_dtm, file = '../data/test-bg-dtm.RData')
+save(test_bg_dtm, file = 'data/test-bg-dtm.RData')
 rm(test_bg_dtm)
 rm(testing_bigrams)
 
 # same, training set
-load('../data/training-bigrams.RData')
+load('data/training-bigrams.RData')
 train_bg_dtm <- training_bigrams %>%
   select(-.id, -bclass, -mclass) %>%
   as.matrix()
 train_labels <- training_bigrams %>%
   select(.id, bclass, mclass)
-save(train_bg_dtm, file = '../data/train-bg-dtm.RData')
+save(train_bg_dtm, file = 'data/train-bg-dtm.RData')
 rm(train_bg_dtm)
 rm(training_bigrams)
 
 # PCA/projection
-load('../data/train-bg-dtm.RData')
+load('data/train-bg-dtm.RData')
 proj_out_bg <- projection_fn(train_bg_dtm, 0.85)
 train_bg_dtm_projected <- proj_out_bg$data
 rm(train_bg_dtm)
 
 # load log odds from binary logistic principal components regression of word-tokenized data
-load("../data/train-log-odds.RData")
+load("data/train-log-odds.RData")
 
 # Fit Regression
 train_bg <- train_labels %>%
@@ -103,12 +103,12 @@ cvout_bg <- cv.glmnet(x = x_train_bg,
 lambda_opt_bg <- cvout_bg$lambda.min
 
 # project test data onto PCs
-load('../data/test-bg-dtm.RData')
+load('data/test-bg-dtm.RData')
 test_bg_dtm_projected <- reproject_fn(.dtm = test_bg_dtm, proj_out_bg)
 rm(test_bg_dtm)
 
 # bind log-odds and coerce to matrix
-load('../data/test-log-odds.RData')
+load('data/test-log-odds.RData')
 x_test_bg <- test_bg_dtm_projected %>%
   bind_cols(test_log_odds) %>%
   as.matrix()
