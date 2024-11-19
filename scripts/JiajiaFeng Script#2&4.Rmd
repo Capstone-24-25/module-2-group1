@@ -56,8 +56,8 @@ tokenized_data <- claims_raw %>%
 
 # Create a document-term matrix (DTM)
 dtm <- tokenized_data %>%
-  count(id, word) %>%
-  cast_dtm(document = id, term = word, value = n)
+  count(.id, word) %>%
+  cast_dtm(document = .id, term = word, value = n)
 
 ```
 
