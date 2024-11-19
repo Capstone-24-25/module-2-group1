@@ -2,18 +2,19 @@
 
 ```{r}
 load('data2/claims-raw.RData')
-write.csv(claims_raw, "claims_raw.csv", row.names = FALSE)
-raw_csv <- read.csv("claims_raw.csv")
 ```
 
 ```{r}
 ls()
-# Assuming your data is stored in a variable named 'claims_raw'
 head(claims_raw)
 ```
 
 ```{r}
 library(rvest)
+library(tidytext)
+library(dplyr)
+
+data("stop_words")
 ```
 
 ## Preliminary Task1
@@ -46,8 +47,17 @@ claims_raw$content_combined <- sapply(claims_raw$text_tmp, extract_content)
 
 ```
 
-### Clean the text data
+### Tokenize the text
 ```{r}
+# Tokenize the text data
+tokenized_data <- claims_raw %>%
+  unnest_tokens(word, content_combined) %>%
+  anti_join(stop_words, by = "word")  # Remove stop words
+
+# Create a document-term matrix (DTM)
+dtm <- tokenized_data %>%
+  count(id, word) %>%
+  cast_dtm(document = id, term = word, value = n)
 
 ```
 
