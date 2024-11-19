@@ -77,11 +77,20 @@ history <- model %>%
       epochs = 5)
 
 ## CHECK TEST SET ACCURACY HERE
+<<<<<<< HEAD
+test_text <- testing(partitions) %>%
+  pull(text_clean)
+test_labels <- testing(partitions) %>%
+  pull(bclass) %>%
+  as.numeric() - 1
+evaluate(model, test_text, test_labels)
+=======
 load('results/example-preds.RData')
 
 true_labels <- claims_test %>%
   pull(bclass)
 
+>>>>>>> main
 
 # save the entire model as a SavedModel
 save_model_tf(model, "results/example-model")

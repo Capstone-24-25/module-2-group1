@@ -1,0 +1,102 @@
+## PREPROCESSING
+#################
+
+# can comment entire section out if no changes to preprocessing.R
+source('scripts/preprocessing.R')
+
+# load raw data
+load('data/claims-raw.RData')
+
+# preprocess (will take a minute or two)
+claims_clean <- claims_raw %>%
+  parse_data()
+
+# export
+save(claims_clean, file = 'data/claims-clean-example.RData')
+
+## MODEL TRAINING (NN)
+######################
+library(tidyverse)
+library(tidymodels)
+library(keras)
+library(tensorflow)
+
+# load cleaned data
+load('data/claims-clean-example.RData')
+
+# partition
+set.seed(110122)
+partitions <- claims_clean %>%
+  initial_split(prop = 0.8)
+
+train_text <- training(partitions) %>%
+  pull(text_clean)
+train_labels <- training(partitions) %>%
+  pull(bclass) %>%
+  as.numeric() - 1
+
+# If having library conflicts
+#install.packages("keras", type = "source")
+#library(keras)
+#install_keras()
+
+# create a preprocessing layer
+preprocess_layer <- layer_text_vectorization(
+  standardize = NULL,
+  split = 'whitespace',
+  ngrams = 3,
+  max_tokens = NULL,
+  output_mode = 'tf_idf'
+)
+
+preprocess_layer %>% adapt(train_text)
+
+# define NN architecture
+model <- keras_model_sequential() %>%
+  preprocess_layer() %>%
+  layer_dropout(0.2) %>%
+  layer_dense(25) %>%
+  layer_dropout(0.2) %>%
+  layer_dense(5) %>%
+  layer_dropout(0.2) %>%
+  layer_dense(1) %>%
+  layer_activation(activation = 'sigmoid')
+
+model <- keras_model_sequential() %>%
+  preprocess_layer() %>%
+  layer_embedding(
+    input_dim = 1,
+    output_dim = 10
+  ) %>%
+  layer_lstm(10) %>%
+  layer_dense(
+    units = 1, 
+    activation = "sigmoid"
+  )
+  
+summary(model)
+
+# configure for training
+model %>% compile(
+  loss = 'binary_crossentropy',
+  optimizer = 'adam',
+  metrics = 'binary_accuracy'
+)
+
+# train
+history <- model %>%
+  fit(train_text, 
+      train_labels,
+      validation_split = 0.25,
+      epochs = 20)
+
+## CHECK TEST SET ACCURACY HERE
+test_text <- testing(partitions) %>%
+  pull(text_clean)
+test_labels <- testing(partitions) %>%
+  pull(bclass) %>%
+  as.numeric() - 1
+evaluate(model, test_text, test_labels)
+
+# save the entire model as a SavedModel
+save_model_tf(model, "results/example-model")
