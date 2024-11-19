@@ -5,7 +5,7 @@ library(dplyr)
 library(tm)
 library(Matrix)
 library(irlba)
-source('../scripts/preprocessing.R')
+source('scripts/preprocessing.R')
 
 # secondary tokenization to get bigrams
 bigrams <- claims_raw %>%
@@ -72,6 +72,19 @@ combined_data <- cbind(bigram_pca_data, as.vector(log_odds))
 
 combined_data <- cbind(bigram_pca_data[order(bigram_pca_data$.id), ], 
                        log_odds[order(log_odds$.id), ]) ## where i stopped
+
+# combo log odds from 1st model w 2nd model PC
+log_odds_df <- data.frame(log_odds = log_odds) %>%
+  mutate(.id = as.character(row_number()))
+bigram_pca_data <- bigram_pca_data %>% mutate(.id = as.character(row_number()))
+
+
+
+
+combined_data <- inner_join(bigram_pca_data, log_odds_df, by = ".id")
+
+combined_data <- combined_data %>%
+  full_join(response, by = '.id')
 
 # fit 2nd log reg
 bigram_log_reg <- glm(bclass ~ ., data = combined_data, family = binomial)
