@@ -10,7 +10,7 @@ library(sparsesvd)
 library(glmnet)
 
 source("../scripts/modified-preprocessing.R")
-source("./scripts/projection.R")
+source("../scripts/projection.R")
 
 # load raw data
 load('../data/claims-raw.RData')
@@ -76,12 +76,12 @@ cvout <- cv.glmnet(x = x_train,
 lambda_opt <- cvout$lambda.min
 
 # get log-odds
-log_odds <- predict(fit_reg,
+train_log_odds <- predict(fit_reg,
                     s = lambda_opt,
                     newx = x_train,
                     type = "link")
 
-save(log_odds, file = "../data/log-odds.RData")
+save(train_log_odds, file = "../data/train-log-odds.RData")
 
 # project test data onto PCs
 test_dtm_projected <- reproject_fn(.dtm = test_dtm, proj_out)
@@ -94,6 +94,14 @@ preds <- predict(fit_reg,
                  s = lambda_opt, 
                  newx = x_test,
                  type = 'response')
+
+# get log-odds
+test_log_odds <- predict(fit_reg,
+                         s = lambda_opt,
+                         newx = x_test,
+                         type = "link")
+
+save(test_log_odds, file = "../data/test-log-odds.RData")
 
 # store predictions in a data frame with true labels
 pred_df <- test_labels %>%

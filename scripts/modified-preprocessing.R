@@ -57,3 +57,25 @@ nlp_fn <- function(parse_data.out){
                 values_fill = 0)
   return(out)
 }
+
+# function to get bigrams
+nlp_bg_fn <- function(parse_data.out){
+  out <- parse_data.out %>% 
+    unnest_tokens(output = bigram, 
+                  input = text_clean, 
+                  token = 'ngrams',
+                  n = 2,
+                  stopwords = str_remove_all(stop_words$word, 
+                                             '[[:punct:]]')) %>%
+    mutate(bigram.lem = lemmatize_strings(bigram)) %>%
+    filter(str_length(bigram.lem) > 2) %>%
+    count(.id, bclass, mclass, bigram.lem, name = 'n') %>%
+    bind_tf_idf(term = bigram.lem, 
+                document = .id,
+                n = n) %>%
+    pivot_wider(id_cols = c('.id', 'bclass', 'mclass'),
+                names_from = 'bigram.lem',
+                values_from = 'tf_idf',
+                values_fill = 0)
+  return(out)
+}
