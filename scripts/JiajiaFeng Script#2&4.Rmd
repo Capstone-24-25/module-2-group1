@@ -1,0 +1,13 @@
+
+
+```{r}
+load('data2/claims-raw.RData')
+```
+
+```{r}
+ls()
+# Assuming your data is stored in a variable named 'claims_raw'
+head(claims_raw)
+```
+
+ 
