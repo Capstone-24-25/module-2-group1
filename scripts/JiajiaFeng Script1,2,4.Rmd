@@ -79,18 +79,39 @@ pca_result <- prcomp(dtm_filtered, center = TRUE, scale. = TRUE)
 ```
 ### 4.Logistic Principal Component Regression
 ```{r}
-# fix differing number of rows: pca_scores:2120, claims_raw$bclass:2165
+# fix error: differing number of rows: pca_scores:2120, claims_raw$bclass:2165
 rows_to_keep <- rownames(dtm_matrix)
 claims_raw_filtered <- claims_raw %>% filter(.id %in% rows_to_keep)
-
 ```
 
 ```{r}
-# Extract principal components (scores)
+# Extract PCA scores and combine with the adjusted 'bclass', which is 'binary_class'
 pca_scores <- pca_result$x
+
 data_for_model <- data.frame(pca_scores, binary_class = claims_raw_filtered$bclass)
 data_for_model$binary_class <- as.factor(data_for_model$binary_class)
+```
 
 
+
+```{r}
+# Fix Warning: glm.fit: algorithm did not converge
+binary_class_index <- which(names(data_for_model) == "binary_class")
+print(binary_class_index)
+# Choose the first 10 components and binary class column
+data_for_model_reduced <- data_for_model[, c(1:10, binary_class_index)]
+
+names(data_for_model_reduced)
+```
+
+
+```{r}
+# Fit logistic regression model using PCA components
+logistic_model <- glm(binary_class ~ ., data = data_for_model_reduced, family = binomial)
+```
+```
+
+```{r}
+summary(logistic_model)
 ```
 
