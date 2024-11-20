@@ -1,12 +1,11 @@
 
-
+## Preparation
 ```{r}
 load('data2/claims-raw.RData')
 ```
 
 ```{r}
 ls()
-head(claims_raw)
 ```
 
 ```{r}
@@ -21,7 +20,8 @@ library(stopwords)
 library(tokenizers)
 ```
 
-## Preliminary Task1
+
+## Preliminary Task1 (5 steps)
 
 ### 1.Scrape both header and paragraph content
 ```{r}
@@ -108,9 +108,8 @@ names(data_for_model_reduced)
 ```{r}
 # Fit logistic regression model using PCA components
 logistic_model <- glm(binary_class ~ ., data = data_for_model_reduced, family = binomial)
-summary(logistic_model)
 ```
-## 5. Are binary class predictions improved using logistic principal component regression?
+### 5. Are binary class predictions improved using logistic principal component regression?
 ```{r}
 library(pROC)
 
@@ -126,3 +125,35 @@ plot(roc_curve)
 ```
 Yes, the binary class predictions are significantly improved using logistic principal component regression compared to random guessing has an AUC of 0.5. After including 500 principal components, the AUC increased to 0.8268, which demonstrates a strong ability to distinguish between the two classes. 
 
+
+
+
+## Preliminary Task 2 ()
+
+### 1.Secondary Tokenization to obtain bigrams
+```{r}
+names(claims_raw) 
+```
+```{r}
+# Tokenize the text to obtain bigrams
+bigram_data <- claims_raw %>%
+  unnest_tokens(bigram, content_combined, token = "ngrams", n = 2)
+
+
+```
+
+### 2.Fit Logistic Regression on word-tokenized data (unigrams) as baseline
+```{r}
+# What we do in task1  
+# Fit logistic regression on PCA of word-tokenized data
+pca_scores_words <- pca_result$x  # Use PCA scores from unigrams
+word_model <- glm(binary_class ~ ., data = data_for_model_reduced, family = binomial)
+
+# Predicted log-odds-ratios
+word_predicted_log_odds <- predict(word_model, type = "link")
+
+
+```
+
+
+## Primary Task 1 ()
