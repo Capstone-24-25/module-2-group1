@@ -344,6 +344,7 @@ test_tokens <- claims_test %>%
 
 
 ### 2. Vectorize Text Features
+Use unigrams, bigrams, or TF-IDF.
 ```{r}
 
 ```
