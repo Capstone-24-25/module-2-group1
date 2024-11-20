@@ -362,11 +362,75 @@ binary_model <- logistic_model  # Task 1 logistic regression model
 
 ```
 
+#### 2.2 Multiclass Classification with SVM
+
 ```{r}
+library(e1071)
+
+# Convert training DTM to matrix
+train_matrix <- as.matrix(train_dtm)
+
+# Multiclass labels
+train_labels <- claims_raw$mclass  # Ensure this column exists in your data
 
 ```
 
-#### Binary Classification
-#### Multiclass Classification
-### 4.Generate Predictions
+```{r}
+#Fix error train_matrix: 2120 and train_labels: 2165 
+cat("Rows in train_matrix:", nrow(train_matrix), "\n")
+cat("Rows in train_labels:", length(train_labels), "\n")
+
+rows_to_keep <- rownames(train_matrix)
+
+claims_raw_aligned <- claims_raw %>%
+  filter(.id %in% rows_to_keep)
+
+aligned_labels <- claims_raw_aligned$mclass
+
+# Verify alignment
+cat("Rows in aligned_labels:", length(aligned_labels), "\n")
+cat("Rows in train_matrix (should match):", nrow(train_matrix), "\n")
+
+```
+
+```{r}
+
+# Train SVM model
+svm_multiclass_model <- svm(
+  x = train_matrix,
+  y = as.factor(aligned_labels),
+  type = "C-classification", 
+  kernel = "linear"           
+)
+
+# Save the SVM model
+saveRDS(svm_multiclass_model, "svm_multiclass_model.rds")
+
+```
+#### Plan B model：
+```{r}
+library(randomForest)
+
+# Train Random Forest model
+rf_multiclass_model <- randomForest(
+  x = train_matrix, 
+  y = as.factor(aligned_labels), 
+  ntree = 100,            # Number of trees
+  mtry = sqrt(ncol(train_matrix))  # Number of features considered at each split
+)
+
+# Save the model
+saveRDS(rf_multiclass_model, "rf_multiclass_model.rds")
+
+```
+
+### 3: Make Predictions
+#### 3.1 Test DTM
+```{r}
+test_matrix <- as.matrix(test_dtm)
+```
+#### 3.2 Binary prediction
+#### 3.3 Multiclass prediction
+
+### 4: Combine Predictions
 ### 5.Export Deployable Model
