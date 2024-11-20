@@ -294,7 +294,7 @@ load("data2/claims-test.RData")
 ```
 
 ```{r}
-names(claims_test)  # 查看所有列名
+names(claims_test)
 ```
 
 ```{r}
