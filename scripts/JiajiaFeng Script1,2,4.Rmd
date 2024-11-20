@@ -292,12 +292,12 @@ combined_features <- data.frame(
 ```{r}
 load("data2/claims-raw.RData")
 load("data2/claims-test.RData")
-#load("data2/claims-clean-example.RData")
+
 ```
 
 ```{r}
-#head(claims_raw)
-#head(claims_clean_example)
+ncol(claims_raw)
+ncol(claims_test)
 ```
 #### 1.2 Tokenization and Cleaning
 ```{r}
@@ -351,6 +351,9 @@ train_dtm <- train_tokens %>%
 
 test_dtm <- test_tokens %>%
   cast_dtm(document = .id, term = word, value = n)
+
+ncol(train_dtm)
+ncol(test_dtm)
 
 ```
 
@@ -425,11 +428,51 @@ saveRDS(rf_multiclass_model, "rf_multiclass_model.rds")
 ```
 
 ### 3: Make Predictions
-#### 3.1 Test DTM
+#### 3.0 Fix Errors before make Test Matrix
+
 ```{r}
-test_matrix <- as.matrix(test_dtm)
+#Fix error: train dtm and test dtm have different number of columns
+anyNA(colnames(train_dtm))  # Check for NA column names
+colnames(train_dtm)[is.na(colnames(train_dtm))] <- "UNKNOWN"
+anyNA(colnames(test_dtm))  # Check for NA column names
+colnames(test_dtm)[is.na(colnames(test_dtm))] <- "UNKNOWN"
+# Check for missing columns in test_dtm
+missing_cols <- setdiff(colnames(train_dtm), colnames(test_dtm))
+print(missing_cols)  # Print missing column names
+
 ```
+
+```{r}
+# Add missing columns to test_dtm
+missing_cols <- setdiff(colnames(train_dtm), colnames(test_dtm))
+test_dtm_aligned <- cbind(test_dtm, matrix(0, nrow = nrow(test_dtm), ncol = length(missing_cols)))
+colnames(test_dtm_aligned) <- c(colnames(test_dtm), missing_cols)
+
+# Reorder columns to match train_dtm
+test_dtm_aligned <- test_dtm_aligned[, colnames(train_dtm), drop = FALSE]
+
+```
+```{r}
+# Verify dimensions match
+cat("Columns in train_dtm:", ncol(train_dtm), "\n")
+cat("Columns in test_dtm_aligned:", ncol(test_dtm_aligned), "\n")
+
+# Check column name consistency
+all.equal(colnames(train_dtm), colnames(test_dtm_aligned))
+
+```
+
+#### 3.1 Prepare Aligned Test Matrix
+
+```{r}
+test_matrix <- as.matrix(test_dtm_aligned)
+```
+
 #### 3.2 Binary prediction
+```{r}
+
+```
+
 #### 3.3 Multiclass prediction
 
 ### 4: Combine Predictions
