@@ -28,5 +28,3 @@ pred_classes <- factor(preds > 0.5, labels = class_labels)
 pred_df <- clean_df %>%
   bind_cols(bclass.pred = pred_classes) %>%
   select(.id, bclass.pred)
-
-save(pred_df, file = 'results/example-preds.RData')
