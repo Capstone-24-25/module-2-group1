@@ -145,8 +145,9 @@ bigram_data <- claims_raw %>%
 ### 2.Fit Logistic Regression on word-tokenized data (unigrams) as baseline
 ```{r}
 # What we do in task1  
+
 # Fit logistic regression on PCA of word-tokenized data
-pca_scores_words <- pca_result$x  # Use PCA scores from unigrams
+pca_scores_words <- pca_result$x
 word_model <- glm(binary_class ~ ., data = data_for_model_reduced, family = binomial)
 
 # Predicted log-odds-ratios
@@ -154,6 +155,132 @@ word_predicted_log_odds <- predict(word_model, type = "link")
 
 
 ```
+### 3.Input Predicted Log-Odds and PCA Scores of Bigrams
+```{r}
+# Fix error: memory limit 
+# Count bigram frequencies across all documents
+bigram_counts <- bigram_data %>%
+  count(bigram) %>%
+  filter(n > 5)  # Keep bigrams that occur more than 5 times
 
+# Filter the bigram_data to include only frequent bigrams
+bigram_data_filtered <- bigram_data %>%
+  filter(bigram %in% bigram_counts$bigram)
+
+# Create a smaller DTM
+bigram_dtm <- bigram_data_filtered %>%
+  count(.id, bigram) %>%
+  cast_dtm(document = .id, term = bigram, value = n)
+
+bigram_matrix <- as.matrix(bigram_dtm)
+
+```
+
+```{r}
+bigram_pca_result <- prcomp(bigram_matrix, center = TRUE, scale. = TRUE)
+
+```
+
+```{r}
+# Extract the top 10 principal components from bigram PCA
+bigram_pca_scores <- bigram_pca_result$x
+combined_data <- data.frame(
+  log_odds = word_predicted_log_odds,
+  bigram_pca_scores = bigram_pca_scores[, 1:10],  # Use top 10 bigram components
+  binary_class = claims_raw_filtered$bclass
+)
+```
+
+
+## Preliminary Task 2 Ver.2 ()
+### 1.Bigram Tokenization
+```{r}
+# Bigram Tokenization
+library(tidytext)
+
+bigram_tokens <- claims_raw %>%
+  unnest_tokens(output = bigram, input = content_combined, token = "ngrams", n = 2)
+
+```
+### 2.Filter Low-frequency Bigram
+```{r}
+# Filter frequent bigrams
+bigram_counts <- bigram_tokens %>%
+  count(bigram) %>%
+  filter(n > 5)  # Only keep bigrams appearing more than 5 times
+
+filtered_bigram_tokens <- bigram_tokens %>%
+  filter(bigram %in% bigram_counts$bigram)
+```
+
+### 3.Construct the DTM of Bigram
+```{r}
+# Create a Document-Term Matrix for bigrams
+bigram_dtm <- filtered_bigram_tokens %>%
+  count(.id, bigram) %>%
+  cast_dtm(document = .id, term = bigram, value = n)
+
+```
+### 4.PCA on Bigram's DTM
+```{r}
+# Convert to a dense matrix and perform PCA
+bigram_matrix <- as.matrix(bigram_dtm)
+
+# Perform PCA on the filtered bigram DTM
+bigram_pca <- prcomp(bigram_matrix, center = TRUE, scale. = TRUE)
+
+# Extract top N components (adjustable)
+bigram_pca_scores <- bigram_pca$x[, 1:10]  # Use top 10 components
+
+```
+
+### 5. Combine Log-Odds of Word Prediction(unigram) and PCA Scores of Bigram
+
+```{r}
+# What we do in task1  
+
+# Fit logistic regression on PCA of word-tokenized data
+pca_scores_words <- pca_result$x
+#word_model <- glm(binary_class ~ ., data = data_for_model_reduced, family = binomial)
+
+# Predicted log-odds-ratios
+predicted_log_odds <- predict(logistic_model, type = "link")
+
+```
+
+```{r}
+# Step 1: Identify rows to keep
+rows_to_keep <- intersect(
+  names(predicted_log_odds),  # Use names() for vectors
+  rownames(bigram_pca_scores)
+)
+
+# Step 2: Filter claims_raw_filtered to keep only matching rows
+claims_raw_filtered <- claims_raw_filtered %>%
+  filter(.id %in% rows_to_keep)
+
+# Step 3: Subset predicted_log_odds and bigram_pca_scores to the same rows
+predicted_log_odds <- predicted_log_odds[rows_to_keep]  # Simple indexing for vectors
+bigram_pca_scores <- bigram_pca_scores[rows_to_keep, , drop = FALSE]  # Subset matrix
+
+# Step 4: Combine aligned datasets
+combined_features <- data.frame(
+  log_odds_unigram = predicted_log_odds,
+  bigram_pca_scores,
+  binary_class = claims_raw_filtered$bclass  # Ensure alignment
+)
+
+```
+
+
+```{r}
+# Combine unigram log-odds and bigram PCA scores
+combined_features <- data.frame(
+  log_odds_unigram = predicted_log_odds,  # From your unigram model
+  bigram_pca_scores,  # Top 10 bigram PCA scores
+  binary_class = claims_raw_filtered$bclass  # Ensure consistent alignment
+)
+
+```
 
 ## Primary Task 1 ()
