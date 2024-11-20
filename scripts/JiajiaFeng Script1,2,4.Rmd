@@ -291,10 +291,12 @@ combined_features <- data.frame(
 ```{r}
 load("data2/claims-raw.RData")
 load("data2/claims-test.RData")
+#load("data2/claims-clean-example.RData")
 ```
 
 ```{r}
-head(claims-raw)
+#head(claims_raw)
+#head(claims_clean_example)
 ```
 
 ```{r}
@@ -340,3 +342,13 @@ test_tokens <- claims_test %>%
   count(.id, word)
 ```
 
+
+### 2. Vectorize Text Features
+```{r}
+
+```
+
+
+### 3.Train Predictive Models
+### 4.Generate Predictions
+### 5.Export Deployable Model
