@@ -294,7 +294,7 @@ load("data2/claims-test.RData")
 ```
 
 ```{r}
-head(claims-raw)
+names(claims_test)  # 查看所有列名
 ```
 
 ```{r}
@@ -320,7 +320,7 @@ extract_content <- function(html_content) {
 
 # Apply the function to the 'text_tmp' column
 claims_raw$content_combined <- sapply(claims_raw$text_tmp, extract_content)
-claims-test$content_combined <- sapply(claims-test$text_tmp, extract_content)
+claims_test$content_combined <- sapply(claims_test$text_tmp, extract_content)
 
 ```
 
