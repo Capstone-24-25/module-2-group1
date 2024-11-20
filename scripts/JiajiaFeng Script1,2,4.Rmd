@@ -69,14 +69,13 @@ dtm_matrix <- as.matrix(dtm)
 ```
 
 ### 3.Principal Component Analysis (PCA)
-
-
 ```{r}
 threshold <- 5 # reduce running time
 dtm_filtered <- dtm_matrix[, colSums(dtm_matrix) > threshold]
 pca_result <- prcomp(dtm_filtered, center = TRUE, scale. = TRUE)
 
 ```
+
 ### 4.Logistic Principal Component Regression
 ```{r}
 # fix error: differing number of rows: pca_scores:2120, claims_raw$bclass:2165
@@ -97,9 +96,10 @@ data_for_model$binary_class <- as.factor(data_for_model$binary_class)
 ```{r}
 # Fix Warning: glm.fit: algorithm did not converge
 binary_class_index <- which(names(data_for_model) == "binary_class")
-print(binary_class_index)
-# Choose the first 10 components and binary class column
-data_for_model_reduced <- data_for_model[, c(1:10, binary_class_index)]
+
+# Choose the first 500 components (through Cumulative Variance Explained) and binary class column
+data_for_model_reduced <- data_for_model[, c(1:500, binary_class_index)] 
+
 
 names(data_for_model_reduced)
 ```
@@ -108,10 +108,21 @@ names(data_for_model_reduced)
 ```{r}
 # Fit logistic regression model using PCA components
 logistic_model <- glm(binary_class ~ ., data = data_for_model_reduced, family = binomial)
-```
-```
-
-```{r}
 summary(logistic_model)
 ```
+## 5. Are binary class predictions improved using logistic principal component regression?
+```{r}
+library(pROC)
+
+predicted_probs <- predict(logistic_model, type = "response")
+
+# AUC after PCA
+roc_curve <- roc(data_for_model_reduced$binary_class, predicted_probs)
+auc(roc_curve)
+
+# ROC Curve
+plot(roc_curve)
+
+```
+Yes, the binary class predictions are significantly improved using logistic principal component regression compared to random guessing has an AUC of 0.5. After including 500 principal components, the AUC increased to 0.8268, which demonstrates a strong ability to distinguish between the two classes. 
 
