@@ -283,4 +283,60 @@ combined_features <- data.frame(
 
 ```
 
+
+
 ## Primary Task 1 ()
+
+### 1.Load and Preprocess the Data
+```{r}
+load("data2/claims-raw.RData")
+load("data2/claims-test.RData")
+```
+
+```{r}
+head(claims-raw)
+```
+
+```{r}
+
+# Why use tryCatch: prevent the entire script from failing due to an issue with a single piece of HTML content
+extract_content <- function(html_content) {
+  tryCatch({
+    # Read the HTML content
+    page <- read_html(html_content)
+    
+    # Extract headers and paragraphs
+    headers <- page %>% html_nodes("h1, h2, h3") %>% html_text()
+    paragraphs <- page %>% html_nodes("p") %>% html_text()
+    
+    # Combine headers and paragraphs
+    combined_content <- c(headers, paragraphs)
+    return(paste(combined_content, collapse = " "))
+  }, error = function(e) {
+    # Return NA or an empty string if an error occurs
+    return(NA)
+  })
+}
+
+# Apply the function to the 'text_tmp' column
+claims_raw$content_combined <- sapply(claims_raw$text_tmp, extract_content)
+claims-test$content_combined <- sapply(claims-test$text_tmp, extract_content)
+
+```
+
+```{r}
+library(tidytext)
+
+# Tokenize and clean training data
+train_tokens <- claims_raw %>%
+  unnest_tokens(word, content_combined) %>%
+  anti_join(stop_words, by = "word") %>%
+  count(.id, word)
+
+# Tokenize and clean test data
+test_tokens <- claims_test %>%
+  unnest_tokens(word, content_combined) %>%
+  anti_join(stop_words, by = "word") %>%
+  count(.id, word)
+```
+
