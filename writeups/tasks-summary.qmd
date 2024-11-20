@@ -1,6 +1,6 @@
 ---
 title: "Summary of exploratory tasks"
-author: 'YOUR NAMES HERE'
+author: 'Tess, Jiajia, Will, and Ivy'
 date: today
 ---
 
