@@ -61,18 +61,6 @@ model <- keras_model_sequential() %>%
   layer_dropout(0.2) %>%
   layer_dense(1) %>%
   layer_activation(activation = 'sigmoid')
-
-model <- keras_model_sequential() %>%
-  preprocess_layer() %>%
-  layer_embedding(
-    input_dim = 1,
-    output_dim = 10
-  ) %>%
-  layer_lstm(10) %>%
-  layer_dense(
-    units = 1, 
-    activation = "sigmoid"
-  )
   
 summary(model)
 
