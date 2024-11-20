@@ -13,17 +13,20 @@ head(claims_raw)
 library(rvest)
 library(tidytext)
 library(dplyr)
-
-data("stop_words")
+library(tidyverse)
+library(textstem)
+library(rvest)
+library(qdapRegex)
+library(stopwords)
+library(tokenizers)
 ```
 
 ## Preliminary Task1
 
-### Scrape both header and paragraph content
+### 1.Scrape both header and paragraph content
 ```{r}
-library(rvest)
 
-# use tryCatch: prevent the entire script from failing due to an issue with a single piece of HTML content
+# Why use tryCatch: prevent the entire script from failing due to an issue with a single piece of HTML content
 extract_content <- function(html_content) {
   tryCatch({
     # Read the HTML content
@@ -47,9 +50,11 @@ claims_raw$content_combined <- sapply(claims_raw$text_tmp, extract_content)
 
 ```
 
-### Tokenize the text
+### 2.Tokenize the text
 ```{r}
 # Tokenize the text data
+data("stop_words")
+
 tokenized_data <- claims_raw %>%
   unnest_tokens(word, content_combined) %>%
   anti_join(stop_words, by = "word")  # Remove stop words
@@ -58,6 +63,34 @@ tokenized_data <- claims_raw %>%
 dtm <- tokenized_data %>%
   count(.id, word) %>%
   cast_dtm(document = .id, term = word, value = n)
+
+dtm_matrix <- as.matrix(dtm)
+
+```
+
+### 3.Principal Component Analysis (PCA)
+
+
+```{r}
+threshold <- 5 # reduce running time
+dtm_filtered <- dtm_matrix[, colSums(dtm_matrix) > threshold]
+pca_result <- prcomp(dtm_filtered, center = TRUE, scale. = TRUE)
+
+```
+### 4.Logistic Principal Component Regression
+```{r}
+# fix differing number of rows: pca_scores:2120, claims_raw$bclass:2165
+rows_to_keep <- rownames(dtm_matrix)
+claims_raw_filtered <- claims_raw %>% filter(.id %in% rows_to_keep)
+
+```
+
+```{r}
+# Extract principal components (scores)
+pca_scores <- pca_result$x
+data_for_model <- data.frame(pca_scores, binary_class = claims_raw_filtered$bclass)
+data_for_model$binary_class <- as.factor(data_for_model$binary_class)
+
 
 ```
 
