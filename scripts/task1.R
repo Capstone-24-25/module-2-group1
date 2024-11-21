@@ -126,10 +126,13 @@ panel <- metric_set(sensitivity,
                     roc_auc)
 
 # compute test set accuracy
-pred_df %>% panel(truth = bclass, 
+binary_accuracy_panel <- pred_df %>% panel(truth = bclass, 
                   estimate = bclass.pred, 
                   pred, 
                   event_level = 'second')
+
+saveRDS(binary_accuracy_panel, "./writeups/binary_accuracy_panel.rds")
+
 <<<<<<< HEAD
 =======
 
@@ -251,9 +254,11 @@ panel <- metric_set(sensitivity,
                     roc_auc)
 
 # compute test set accuracy
-pred_df_p %>% panel(truth = bclass, 
+p_accuracy <- pred_df_p %>% panel(truth = bclass, 
                   estimate = bclass.pred, 
                   pred, 
                   event_level = 'second')
+
+save(p_accuracy, file = "writeups/p_accuracy")
 
 >>>>>>> tess

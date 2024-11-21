@@ -123,8 +123,6 @@ auc(roc_curve)
 plot(roc_curve)
 
 ```
-Yes, the binary class predictions are significantly improved using logistic principal component regression compared to random guessing has an AUC of 0.5. After including 500 principal components, the AUC increased to 0.8268, which demonstrates a strong ability to distinguish between the two classes. 
-
 
 
 
@@ -510,7 +508,7 @@ if (length(multiclass_preds) > n_test) {
 
 # results/preds-group[N].RData
 pred_df <- data.frame(
-  .id = claims_test$.id,
+  .id_first = claims_test$.id,
   bclass.pred = binary_labels,
   mclass.pred = multiclass_preds
 )
@@ -519,3 +517,38 @@ pred_df <- data.frame(
 saveRDS(pred_df, "preds-group1.rds")
 
 ```
+
+# Multiclass Test Accuracy
+```{r}
+multiclass_pred <- tibble(
+  .id_first = names(multiclass_preds),
+  pred_class = as.factor(multiclass_preds)
+)
+
+pred_df2 <- pred_df %>%
+  rownames_to_column(var = ".id")
+
+label_map <- c(
+  "1" = "N/A: No relevant content.",
+  "2" = "Physical Activity",
+  "3" = "Possible Fatality",
+  "4" = "Potentially unlawful activity",
+  "5" = "Other claim content")
+
+df_with_truth <- pred_df2 %>%
+  inner_join(claims_raw, by = '.id') %>%
+  mutate(mclass.pred = factor(mclass.pred, levels = 1:5, labels = label_map))
+
+
+
+panel <- metric_set(sensitivity, 
+                    specificity, 
+                    accuracy)
+
+mc_accuracy_panel <- df_with_truth %>% panel(truth = mclass, 
+                  estimate = mclass.pred, 
+                  event_level = 'second')
+
+saveRDS(mc_accuracy_panel, "../writeups/mc_accuracy_panel.rds")
+```
+

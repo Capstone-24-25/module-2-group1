@@ -1,37 +1,32 @@
 ---
 title: "Predictive modeling of claims status"
-author: 'YOUR NAMES HERE'
+author: 'Tess, Jiajia, Will, and Ivy'
 date: today
 ---
 
 ### Abstract
 
-Provide a 3-5 sentence summary of your work on the primary task. Indicate what input data was used, what method was used for binary class predictions, what method was used for multiclass predictions, and what estimated accuracies were achieved.
-
-> *Header and paragraph content was scraped from the raw webpages and processed into term frequencies of word tokens. For binary classification, a two-layer neural network yielded an estimated 81.4% accuracy; for multiclass classification, a support vector machine gave 78% accuracy.*
+The input data used is tokenized data taken from webpages. Articles about local news and other stories were collected into a dataframe to scrape, clean the text, and tallied in appearance by the tokenized cleaned data. For the binary class setting, we slightly adjusted the logistic principal component regression model created from the first preliminary task where we tested the how predictive accuracy was impacted by including headers when scraping the webpages. For the multiclass approach, we used a support vector machine on the same tokenized data used in the binary class setting. For the binary class setting, the AUC from the logistic principal component regression model had an AUC of approximately 0.841. For the multiclass setting, the support vector machine had an AUC value of 0.75.
 
 ### Preprocessing
 
-In one paragraph lay out your preprocessing pipeline. No need to provide exact step-by-step detail; just give an overview of the main components:
-
--   what text content was extracted from HTML
-
--   how text was cleaned
-
--   how cleaned text was represented quantitatively
+The text content extracted from HTML is articles detailing crimes, deaths, and other significant news from a both local news webpages and other sources. We first extracted the text from the page via web-scraping before removing all extra characters to return just the text from the original webpage. After our results from the preliminary task, we decided to not include the headers when scraping the webpages because it decreased the predictive accuracy of our initial models (the logistic principal component regression model). Text from the webpages was then tokenized (not including stop words) and tallied (by number of appearances) to be used in the future models.
 
 ### Methods
 
-Describe your final predictive models. Include one paragraph with details on the binary classification approach, and one on the multiclass approach. Include for each:
+For our binary classification model, we used the principal component analysis logistic regression from the preliminary tasks to classify our data into two classes. We thought that this model was a good fit for the claims data, so we kept the headers included in our scraping to give more information to our model. After training our logistic regression model with our 500 principal components, we found predictions and got our AUC value of 0.8268.
 
--   what ML/statistical method was used
-
--   model specification and hyperparameter selection
-
--   training method
+Next, for our multiclass approach, we fit a Support Vector Machine model to the claims data so that it could classify our data into many classes. Once we had effectively fit our SVM model, we predicted the classes using the computed probabilities, and then tested the accuracy of these predictions.
 
 ### Results
 
-Indicate the predictive accuracy of the binary classifications and the multiclass classifications. Provide a table for each, and report sensitivity, specificity, and accuracy.[^1]
+For the binary classification, it had a predictive accuracy of 0.765, sensitivity of 0.782, and specificity of 0.746. For the multiclass classification, we computed a sensitivity of 0.177, a specificity of 0.793, and an accuracy of 0.293.
 
-[^1]: Read [this article](https://yardstick.tidymodels.org/articles/multiclass.html) on multiclass averaging.
+```{r}
+mc_accuracy_panel <- readRDS("mc_accuracy_panel.rds")
+binary_accuracy_panel <- readRDS("binary_accuracy_panel.rds")
+mc_accuracy_panel
+binary_accuracy_panel
+```
+
+
