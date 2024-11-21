@@ -296,8 +296,8 @@ load("data2/claims-test.RData")
 ```
 
 ```{r}
-ncol(claims_raw)
-ncol(claims_test)
+nrow(claims_raw)
+nrow(claims_test)
 ```
 #### 1.2 Tokenization and Cleaning
 ```{r}
@@ -362,6 +362,8 @@ ncol(test_dtm)
 ```{r}
 # Ensure Task 1 logistic model is available (don't forget to run it in the task1)
 binary_model <- logistic_model  # Task 1 logistic regression model
+
+saveRDS(binary_model, "binary_model.rds")
 
 ```
 
@@ -466,14 +468,74 @@ all.equal(colnames(train_dtm), colnames(test_dtm_aligned))
 
 ```{r}
 test_matrix <- as.matrix(test_dtm_aligned)
+head(test_dtm_aligned)
 ```
 
 #### 3.2 Binary prediction
 ```{r}
+# Check column names
+train_cols <- colnames(train_matrix)
+test_cols <- colnames(test_matrix_aligned)
+
+# Identify missing columns in test_matrix_aligned
+missing_cols <- setdiff(train_cols, test_cols)
+cat("Number of missing columns in test_matrix_aligned:", length(missing_cols), "\n")
+
+# Identify extra columns in test_matrix_aligned
+extra_cols <- setdiff(test_cols, train_cols)
+cat("Number of extra columns in test_matrix_aligned:", length(extra_cols), "\n")
+
+# Check for NA or invalid column names
+anyNA(train_cols)
+anyNA(test_cols)
+
+# Add missing columns with zeros
+if (length(missing_cols) > 0) {
+  test_matrix_aligned <- cbind(
+    test_matrix_aligned, 
+    matrix(0, nrow = nrow(test_matrix_aligned), ncol = length(missing_cols))
+  )
+  colnames(test_matrix_aligned)[(ncol(test_matrix_aligned) - length(missing_cols) + 1):ncol(test_matrix_aligned)] <- missing_cols
+}
+
+duplicated(train_cols)
+
+colnames(train_matrix)[is.na(colnames(train_matrix))] <- "UNKNOWN"
+colnames(test_matrix_aligned)[is.na(colnames(test_matrix_aligned))] <- "UNKNOWN"
+
+all.equal(colnames(train_matrix), colnames(test_matrix_aligned))  # Should return TRUE
+
+
+```
+
+```{r}
+# Apply PCA to aligned test_matrix
+test_pca_scores <- predict(pca_result, newdata = test_matrix_aligned)
+
+# Use the same principal components as in training
+test_pca_reduced <- test_pca_scores[, 1:(ncol(binary_model$coefficients) - 1)]
+
+# Predict binary labels
+test_pca_df <- as.data.frame(test_pca_reduced)
+binary_preds <- predict(binary_model, newdata = test_pca_df, type = "response")
+binary_labels <- ifelse(binary_preds > 0.5, "1", "0")
+
 
 ```
 
 #### 3.3 Multiclass prediction
 
 ### 4: Combine Predictions
-### 5.Export Deployable Model
+```{r}
+pred_df <- data.frame(
+  .id = claims_test$.id,
+  bclass.pred = binary_labels,
+  mclass.pred = multiclass_preds
+)
+
+
+saveRDS(pred_df, "predictions.rds")
+
+```
+
+### 5.Export Deployable Model(maybe don't needed, done in previous steps)
