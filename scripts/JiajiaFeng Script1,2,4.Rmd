@@ -287,16 +287,23 @@ combined_features <- data.frame(
 
 ## Primary Task 1 ()
 
-### 1.Load and Preprocess the Data
+### 1. Load and Preprocess the Data
+#### 1.1 Content Extraction
 ```{r}
 load("data2/claims-raw.RData")
 load("data2/claims-test.RData")
+
 ```
 
 ```{r}
+<<<<<<< HEAD
 names(claims_test)
+=======
+nrow(claims_raw)
+nrow(claims_test)
+>>>>>>> JiajiaFeng
 ```
-
+#### 1.2 Tokenization and Cleaning
 ```{r}
 
 # Why use tryCatch: prevent the entire script from failing due to an issue with a single piece of HTML content
@@ -340,3 +347,198 @@ test_tokens <- claims_test %>%
   count(.id, word)
 ```
 
+
+#### 1.3 Create Document-Term Matrices (DTMs)
+```{r}
+train_dtm <- train_tokens %>%
+  cast_dtm(document = .id, term = word, value = n)
+
+test_dtm <- test_tokens %>%
+  cast_dtm(document = .id, term = word, value = n)
+
+ncol(train_dtm)
+ncol(test_dtm)
+
+```
+
+### 2.Train Models
+#### 2.1 Binary Classification with Logistic Regression
+```{r}
+# Ensure Task 1 logistic model is available (don't forget to run it in the task1)
+binary_model <- logistic_model  # Task 1 logistic regression model
+
+saveRDS(binary_model, "binary_model.rds")
+
+```
+
+#### 2.2 Multiclass Classification with SVM
+
+```{r}
+library(e1071)
+
+# Convert training DTM to matrix
+train_matrix <- as.matrix(train_dtm)
+
+# Multiclass labels
+train_labels <- claims_raw$mclass  # Ensure this column exists in your data
+
+```
+
+```{r}
+#Fix error train_matrix: 2120 and train_labels: 2165 
+cat("Rows in train_matrix:", nrow(train_matrix), "\n")
+cat("Rows in train_labels:", length(train_labels), "\n")
+
+rows_to_keep <- rownames(train_matrix)
+
+claims_raw_aligned <- claims_raw %>%
+  filter(.id %in% rows_to_keep)
+
+aligned_labels <- claims_raw_aligned$mclass
+
+# Verify alignment
+cat("Rows in aligned_labels:", length(aligned_labels), "\n")
+cat("Rows in train_matrix (should match):", nrow(train_matrix), "\n")
+
+```
+
+```{r}
+
+# Train SVM model
+svm_multiclass_model <- svm(
+  x = train_matrix,
+  y = as.factor(aligned_labels),
+  type = "C-classification", 
+  kernel = "linear"           
+)
+
+# Save the SVM model
+saveRDS(svm_multiclass_model, "svm_multiclass_model.rds")
+
+```
+#### Plan B model：
+```{r}
+library(randomForest)
+
+# Train Random Forest model
+rf_multiclass_model <- randomForest(
+  x = train_matrix, 
+  y = as.factor(aligned_labels), 
+  ntree = 100,            # Number of trees
+  mtry = sqrt(ncol(train_matrix))  # Number of features considered at each split
+)
+
+# Save the model
+saveRDS(rf_multiclass_model, "rf_multiclass_model.rds")
+
+```
+### 3: Make Predictions
+#### 3.0 Fix Errors before make Test Matrix
+
+```{r}
+#Fix error: train dtm and test dtm have different number of columns
+anyNA(colnames(train_dtm))  # Check for NA column names
+colnames(train_dtm)[is.na(colnames(train_dtm))] <- "UNKNOWN"
+anyNA(colnames(test_dtm))  # Check for NA column names
+colnames(test_dtm)[is.na(colnames(test_dtm))] <- "UNKNOWN"
+# Check for missing columns in test_dtm
+missing_cols <- setdiff(colnames(train_dtm), colnames(test_dtm))
+print(missing_cols)  # Print missing column names
+
+```
+
+```{r}
+# Add missing columns to test_dtm
+missing_cols <- setdiff(colnames(train_dtm), colnames(test_dtm))
+test_dtm_aligned <- cbind(test_dtm, matrix(0, nrow = nrow(test_dtm), ncol = length(missing_cols)))
+colnames(test_dtm_aligned) <- c(colnames(test_dtm), missing_cols)
+
+# Reorder columns to match train_dtm
+test_dtm_aligned <- test_dtm_aligned[, colnames(train_dtm), drop = FALSE]
+
+```
+```{r}
+# Verify dimensions match
+cat("Columns in train_dtm:", ncol(train_dtm), "\n")
+cat("Columns in test_dtm_aligned:", ncol(test_dtm_aligned), "\n")
+
+# Check column name consistency
+all.equal(colnames(train_dtm), colnames(test_dtm_aligned))
+
+```
+
+#### 3.1 Prepare Aligned Test Matrix
+
+```{r}
+test_matrix <- as.matrix(test_dtm_aligned)
+head(test_dtm_aligned)
+```
+
+#### 3.2 Binary prediction
+```{r}
+# Check column names
+train_cols <- colnames(train_matrix)
+test_cols <- colnames(test_matrix_aligned)
+
+# Identify missing columns in test_matrix_aligned
+missing_cols <- setdiff(train_cols, test_cols)
+cat("Number of missing columns in test_matrix_aligned:", length(missing_cols), "\n")
+
+# Identify extra columns in test_matrix_aligned
+extra_cols <- setdiff(test_cols, train_cols)
+cat("Number of extra columns in test_matrix_aligned:", length(extra_cols), "\n")
+
+# Check for NA or invalid column names
+anyNA(train_cols)
+anyNA(test_cols)
+
+# Add missing columns with zeros
+if (length(missing_cols) > 0) {
+  test_matrix_aligned <- cbind(
+    test_matrix_aligned, 
+    matrix(0, nrow = nrow(test_matrix_aligned), ncol = length(missing_cols))
+  )
+  colnames(test_matrix_aligned)[(ncol(test_matrix_aligned) - length(missing_cols) + 1):ncol(test_matrix_aligned)] <- missing_cols
+}
+
+duplicated(train_cols)
+
+colnames(train_matrix)[is.na(colnames(train_matrix))] <- "UNKNOWN"
+colnames(test_matrix_aligned)[is.na(colnames(test_matrix_aligned))] <- "UNKNOWN"
+
+all.equal(colnames(train_matrix), colnames(test_matrix_aligned))  # Should return TRUE
+
+
+```
+
+```{r}
+# Apply PCA to aligned test_matrix
+test_pca_scores <- predict(pca_result, newdata = test_matrix_aligned)
+
+# Use the same principal components as in training
+test_pca_reduced <- test_pca_scores[, 1:(ncol(binary_model$coefficients) - 1)]
+
+# Predict binary labels
+test_pca_df <- as.data.frame(test_pca_reduced)
+binary_preds <- predict(binary_model, newdata = test_pca_df, type = "response")
+binary_labels <- ifelse(binary_preds > 0.5, "1", "0")
+
+
+```
+
+#### 3.3 Multiclass prediction
+
+### 4: Combine Predictions
+```{r}
+pred_df <- data.frame(
+  .id = claims_test$.id,
+  bclass.pred = binary_labels,
+  mclass.pred = multiclass_preds
+)
+
+
+saveRDS(pred_df, "predictions.rds")
+
+```
+
+### 5.Export Deployable Model(maybe don't needed, done in previous steps)
